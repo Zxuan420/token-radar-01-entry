@@ -183,6 +183,7 @@
 
     var preTab = el('button', { type: 'button', 'aria-pressed': state.tab === 'pre-token' ? 'true' : 'false', text: 'Pre-token Board', onclick: function () { state.tab = 'pre-token'; writeHash(); render(); } });
     var liveTab = el('button', { type: 'button', 'aria-pressed': state.tab === 'live' ? 'true' : 'false', text: 'Live Token View', onclick: function () { state.tab = 'live'; writeHash(); render(); } });
+    var exportBtn = el('button', { type: 'button', class: 'button export-btn', text: 'Export CSV', onclick: exportCsv });
 
     return el('div', { class: 'controls' },
       el('div', { class: 'field' }, el('label', { for: 'q', text: 'Search' }), search),
@@ -191,6 +192,7 @@
       el('div', { class: 'field' }, el('label', { for: 'min_tvl', text: 'TVL Floor' }), minTvlSelect),
       el('div', { class: 'field checkbox-field' }, watchLabel),
       el('div', { class: 'field' }, el('span', { class: 'sub', text: 'View mode' }), el('div', { class: 'tabs' }, preTab, liveTab)),
+      el('div', { class: 'field' }, el('span', { class: 'sub', text: 'Data action' }), exportBtn),
       el('span', { class: 'count', text: state.tab === 'pre-token' ? rows().length + ' protocols shown' : DATA.live.length + ' live tokens' })
     );
   }
@@ -355,6 +357,52 @@
     } else {
       dialog.setAttribute('open', '');
     }
+  }
+
+  function exportCsv() {
+    var list = state.tab === 'pre-token' ? sortedRows(rows()) : DATA.live;
+    var headers = state.tab === 'pre-token'
+      ? ['rank', 'protocol', 'slug', 'category', 'chains', 'tvl_usd', 'change_7d', 'age_days', 'implied_value_usd', 'watchlist', 'status']
+      : ['status', 'protocol', 'slug', 'category', 'chains', 'tvl_usd', 'change_7d', 'mcap_usd'];
+    
+    var csvRows = [headers.join(',')];
+    list.forEach(function (r) {
+      var vals = state.tab === 'pre-token'
+        ? [
+            r.rank,
+            '"' + (r.name || '').replace(/"/g, '""') + '"',
+            '"' + (r.slug || '') + '"',
+            '"' + (r.category || '').replace(/"/g, '""') + '"',
+            '"' + (r.chains || []).join(';') + '"',
+            r.tvl_usd,
+            r.change_7d !== null ? r.change_7d : '',
+            r.age_days !== null ? r.age_days : '',
+            r.implied_value_usd,
+            r.watchlist ? 'true' : 'false',
+            'pre-token'
+          ]
+        : [
+            'active token',
+            '"' + (r.name || '').replace(/"/g, '""') + '"',
+            '"' + (r.slug || '') + '"',
+            '"' + (r.category || '').replace(/"/g, '""') + '"',
+            '"' + (r.chains || []).join(';') + '"',
+            r.tvl_usd,
+            r.change_7d !== null ? r.change_7d : '',
+            r.mcap_usd !== null ? r.mcap_usd : ''
+          ];
+      csvRows.push(vals.join(','));
+    });
+
+    var blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'token-radar-' + state.tab + '-' + DATA.as_of + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
   function render() {

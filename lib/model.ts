@@ -281,51 +281,282 @@ function holdDaysFor(age: number | null): number {
   return 30;
 }
 
-function actionFor(p: SnapshotProtocol, capital: number, chain: string): string {
-  const c = (p.category ?? '').toLowerCase();
-  const name = p.name;
-  if (c.includes('lend') || c.includes('cdp') || c.includes('collateral')) return `Supply $${capital} of USDC or ETH as collateral on ${name} on ${chain} and borrow against it conservatively.`;
-  if (c.includes('dex') || c.includes('yield') || c.includes('leveraged farm')) return `Provide $${capital} of paired liquidity to ${name}'s primary pool on ${chain} and stake the LP tokens in their farm contract.`;
-  if (c.includes('bridge')) return `Bridge $${capital} of USDC across chains through ${name} and execute at least one swap on the destination chain.`;
-  if (c.includes('staking') || c.includes('restak')) return `Stake $${capital} equivalent of the native asset through ${name} on ${chain} and hold the liquid receipt token.`;
-  if (c.includes('perpetual') || c.includes('derivative')) return `Deposit $${capital} of margin collateral into ${name} and maintain at least one active leveraged position.`;
-  if (c.includes('prediction')) return `Commit $${capital} across active prediction markets on ${name} to accumulate participation history.`;
-  if (c.includes('curator') || c.includes('allocator')) return `Deposit $${capital} into an optimized vault managed by ${name} on ${chain} and retain shares.`;
-  if (c.includes('stable')) return `Mint and maintain $${capital} of the synthetic stable asset via ${name} on ${chain}.`;
-  if (c.includes('rwa')) return `Acquire and hold $${capital} of tokenized yield-bearing real-world assets through ${name}.`;
-  if (c.includes('insurance')) return `Purchase $${capital} of coverage protection on ${name} and keep the active policy valid.`;
-  return `Deposit $${capital} of capital into ${name} on ${chain} and interact with its core features.`;
-}
-
-export function farmSteps(p: SnapshotProtocol, age: number | null): FarmStep[] {
-  const chain = chainOf(p);
-  const capital = capitalFor(p);
-  const hold = holdDaysFor(age);
-  const action = actionFor(p, capital, chain);
+function dexSteps(p: SnapshotProtocol, capital: number, chain: string, hold: number): FarmStep[] {
   return [
     {
-      text: `Initialize a dedicated burner wallet holding only transaction gas and budgeted farm capital, keeping credentials secure.`,
-      cost: 'under $3 of gas for initialization',
-      time: '5 minutes',
+      text: `Prepare a dedicated non-custodial EVM wallet initialized exclusively with native gas token and capital allocated for liquidity provision on ${p.name}.`,
+      cost: 'under $3 gas initialization fee',
+      time: '5 minutes setup',
     },
     {
-      text: action,
-      cost: `$${capital} capital + about $${capital >= 150 ? 10 : 5} estimated gas fees`,
+      text: `Acquire balanced amounts of token pairs matching the target pool on ${chain}, then deposit $${capital} into ${p.name}'s automated market maker pools.`,
+      cost: `$${capital} principal + $8 estimated pool deposit gas fee`,
+      time: '15 minutes transaction',
+    },
+    {
+      text: `Stake the received LP (liquidity provider) tokens into the active farming contract on ${p.name} to start accumulating incentive rewards.`,
+      cost: 'about $4 gas fee for staking transaction',
+      time: '10 minutes execution',
+    },
+    {
+      text: `Monitor impermanent loss and pool depth bi-weekly, harvesting accrued yield rewards and compounding them back into the liquidity position.`,
+      cost: '$2 to $3 per harvest gas fee',
+      time: '10 minutes bi-weekly',
+    },
+    {
+      text: `Maintain the liquidity position across ${p.name} for at least ${hold} consecutive days to satisfy multi-epoch airdrop qualification criteria.`,
+      cost: `$${capital} total capital locked in liquidity`,
+      time: `${hold} days retention period`,
+    },
+    {
+      text: `Unstake LP tokens and withdraw underlying assets through the official interface without interacting with unverified external contracts.`,
+      cost: 'about $5 total withdrawal and swap gas',
+      time: '10 minutes finalization',
+    },
+  ];
+}
+
+function lendingSteps(p: SnapshotProtocol, capital: number, chain: string, hold: number): FarmStep[] {
+  return [
+    {
+      text: `Set up a secure hardware-backed or isolated burner wallet containing native gas assets and stablecoins destined for lending markets on ${p.name}.`,
+      cost: 'under $3 initialization gas cost',
+      time: '5 minutes setup',
+    },
+    {
+      text: `Deposit $${capital} of high-quality collateral (USDC or ETH) into ${p.name} money markets on ${chain} to earn baseline supply interest.`,
+      cost: `$${capital} capital + $7 gas fee for deposit approval`,
+      time: '15 minutes deposit',
+    },
+    {
+      text: `Borrow a conservative amount (under 40% LTV) of secondary assets against your collateral on ${p.name} to establish active borrower standing.`,
+      cost: 'about $5 borrowing transaction gas fee',
+      time: '10 minutes execution',
+    },
+    {
+      text: `Maintain health factor above 2.0 at all times by monitoring collateral price volatility and repaying borrowed debt incrementally if needed.`,
+      cost: '$2 monitoring gas per adjustment',
+      time: '5 minutes weekly check',
+    },
+    {
+      text: `Keep the lending and borrowing positions open on ${p.name} continuously for at least ${hold} days across multiple snapshot periods.`,
+      cost: `$${capital} collateral locked in protocol`,
+      time: `${hold} days retention span`,
+    },
+    {
+      text: `Repay outstanding borrowed debt in full, claim supplied principal with accrued interest, and verify zero remaining liabilities.`,
+      cost: 'about $6 repayment and withdrawal gas',
+      time: '10 minutes settlement',
+    },
+  ];
+}
+
+function bridgeSteps(p: SnapshotProtocol, capital: number, chain: string, hold: number): FarmStep[] {
+  const destChain = chain.toLowerCase().includes('arbitrum') ? 'Optimism' : 'Arbitrum';
+  return [
+    {
+      text: `Fund a clean wallet with $${capital} in stablecoins and enough native tokens on ${chain} to cover cross-chain transaction routing fees.`,
+      cost: 'under $3 starting gas fee',
+      time: '5 minutes setup',
+    },
+    {
+      text: `Execute a cross-chain transfer of $${capital} through ${p.name} from ${chain} to ${destChain} utilizing their official messaging router.`,
+      cost: `$${capital} transferred + $12 cross-chain bridge fee`,
+      time: '20 minutes finality wait',
+    },
+    {
+      text: `Perform at least one complementary token swap on the destination chain using ${p.name} liquidity to ensure complete feature interaction.`,
+      cost: 'about $4 destination swap gas fee',
+      time: '10 minutes execution',
+    },
+    {
+      text: `Bridge a portion of the funds back to the origin chain after holding for a few days to demonstrate bidirectional protocol utilization.`,
+      cost: 'about $10 return bridge and gas fee',
+      time: '15 minutes routing',
+    },
+    {
+      text: `Retain transaction hashes and activity logs securely for ${hold} days in case retroactive governance distributions review history.`,
+      cost: 'no monetary cost',
+      time: '5 minutes documentation',
+    },
+  ];
+}
+
+function yieldSteps(p: SnapshotProtocol, capital: number, chain: string, hold: number): FarmStep[] {
+  return [
+    {
+      text: `Initialize an isolated wallet with native chain gas and stablecoin or liquid asset capital designated for automated strategies on ${p.name}.`,
+      cost: 'under $3 gas initialization',
+      time: '5 minutes setup',
+    },
+    {
+      text: `Deposit $${capital} into an optimized compounding vault or strategy managed by ${p.name} on ${chain} to receive receipt share tokens.`,
+      cost: `$${capital} principal + $8 vault deposit gas`,
+      time: '15 minutes deposit',
+    },
+    {
+      text: `Verify that strategy compound triggers and fee tiers operate correctly by inspecting vault performance metrics on-chain.`,
+      cost: 'about $2 inspection gas',
+      time: '10 minutes review',
+    },
+    {
+      text: `Hold vault receipt shares in your wallet continuously for at least ${hold} days without withdrawing principal.`,
+      cost: `$${capital} locked in yield strategy`,
+      time: `${hold} days holding period`,
+    },
+    {
+      text: `Withdraw principal and accumulated yield shares through ${p.name} vault interface and verify token return accuracy.`,
+      cost: 'about $6 withdrawal gas fee',
+      time: '10 minutes settlement',
+    },
+  ];
+}
+
+function derivativesSteps(p: SnapshotProtocol, capital: number, chain: string, hold: number): FarmStep[] {
+  return [
+    {
+      text: `Fund a dedicated trading wallet with margin collateral and gas assets on ${chain} designated for perpetual or options trading on ${p.name}.`,
+      cost: 'under $3 initialization gas',
+      time: '5 minutes setup',
+    },
+    {
+      text: `Deposit $${capital} of margin collateral into ${p.name} margin account contract and open a modest leveraged position (2x to 3x).`,
+      cost: `$${capital} margin + $7 position opening gas`,
+      time: '15 minutes execution',
+    },
+    {
+      text: `Manage margin health actively, collecting trading rewards or rebates if offered by ${p.name} governance incentive programs.`,
+      cost: '$3 funding and management gas',
+      time: '10 minutes weekly check',
+    },
+    {
+      text: `Keep trading activity active on ${p.name} across at least ${hold} days with regular volume milestones.`,
+      cost: `$${capital} margin collateral maintained`,
+      time: `${hold} days trading duration`,
+    },
+    {
+      text: `Close open perpetual positions, withdraw remaining margin capital from ${p.name}, and verify settlement balances.`,
+      cost: 'about $5 position closure gas',
+      time: '10 minutes settlement',
+    },
+  ];
+}
+
+function cdpSteps(p: SnapshotProtocol, capital: number, chain: string, hold: number): FarmStep[] {
+  return [
+    {
+      text: `Prepare a secure non-custodial wallet with ETH or liquid collateral and native gas tokens for minting operations on ${p.name}.`,
+      cost: 'under $3 initialization gas',
+      time: '5 minutes setup',
+    },
+    {
+      text: `Deposit $${capital} worth of collateral into a new vault on ${p.name} on ${chain} and mint synthetic stablecoins conservatively.`,
+      cost: `$${capital} collateral + $9 minting gas fee`,
+      time: '15 minutes vault creation',
+    },
+    {
+      text: `Stake the minted synthetic stablecoins in ${p.name} stability modules or secondary yield pools to earn protocol emission rewards.`,
+      cost: 'about $4 staking transaction gas',
+      time: '10 minutes execution',
+    },
+    {
+      text: `Maintain vault collateralization ratio well above liquidation thresholds for at least ${hold} days across market cycles.`,
+      cost: '$2 monitoring gas per adjustment',
+      time: `${hold} days retention span`,
+    },
+    {
+      text: `Unstake synthetic tokens, repay minted debt plus stability fees, and withdraw original collateral from ${p.name}.`,
+      cost: 'about $8 debt repayment and withdrawal gas',
+      time: '15 minutes closure',
+    },
+  ];
+}
+
+function restakingSteps(p: SnapshotProtocol, capital: number, chain: string, hold: number): FarmStep[] {
+  return [
+    {
+      text: `Initialize a clean participant wallet with liquid staked tokens or native staking assets and gas funds for ${p.name}.`,
+      cost: 'under $3 initialization gas',
+      time: '5 minutes setup',
+    },
+    {
+      text: `Deposit $${capital} of liquid staked assets into ${p.name} restaking contracts on ${chain} to secure active validation services.`,
+      cost: `$${capital} restaked assets + $8 deposit gas`,
+      time: '15 minutes restaking',
+    },
+    {
+      text: `Delegate restaked shares to active node operators supporting decentralized verification networks within ${p.name} ecosystem.`,
+      cost: 'about $4 delegation gas fee',
+      time: '10 minutes execution',
+    },
+    {
+      text: `Hold restaked positions continuously for at least ${hold} days to accumulate points and protocol loyalty multiplier bonuses.`,
+      cost: `$${capital} assets locked in restaking`,
+      time: `${hold} days holding duration`,
+    },
+    {
+      text: `Initiate unstaking requests through ${p.name} portal, wait out unbonding periods, and claim withdrawn principal securely.`,
+      cost: 'about $7 unbonding withdrawal gas',
+      time: '15 minutes request plus unbonding delay',
+    },
+  ];
+}
+
+function rwaSteps(p: SnapshotProtocol, capital: number, chain: string, hold: number): FarmStep[] {
+  return [
+    {
+      text: `Complete necessary KYC or eligibility verification steps required by ${p.name} compliance framework using a secure wallet.`,
+      cost: 'zero fees for compliance check',
+      time: '20 minutes verification',
+    },
+    {
+      text: `Fund wallet with $${capital} in approved stablecoins and network gas for subscription transactions on ${chain}.`,
+      cost: 'under $3 gas preparation',
+      time: '5 minutes setup',
+    },
+    {
+      text: `Subscribe to tokenized yield-bearing real-world asset tranches through ${p.name} investment portal.`,
+      cost: `$${capital} investment + $10 subscription gas`,
+      time: '15 minutes transaction',
+    },
+    {
+      text: `Hold tokenized RWA positions in your wallet continuously for at least ${hold} days while receiving yield distributions.`,
+      cost: `$${capital} principal invested in RWA`,
+      time: `${hold} days retention period`,
+    },
+    {
+      text: `Redeem tokenized assets back into stablecoins through official ${p.name} redemption mechanism when maturity is reached.`,
+      cost: 'about $8 redemption gas fee',
+      time: '15 minutes settlement',
+    },
+  ];
+}
+
+function generalSteps(p: SnapshotProtocol, capital: number, chain: string, hold: number): FarmStep[] {
+  return [
+    {
+      text: `Initialize a dedicated burner wallet holding only transaction gas and budgeted capital for interacting with ${p.name}.`,
+      cost: 'under $3 gas initialization fee',
+      time: '5 minutes setup',
+    },
+    {
+      text: `Deposit $${capital} of capital into ${p.name} core smart contracts on ${chain} and complete initial onboarding actions.`,
+      cost: `$${capital} capital + $7 estimated gas fee`,
       time: '15 minutes setup',
     },
     {
-      text: `Perform recurring weekly interactions such as rebalancing, compounding rewards, or voting on governance proposals.`,
-      cost: 'about $2 to $4 in weekly gas',
+      text: `Perform recurring weekly interactions such as claiming rewards, voting on governance polls, or rebalancing positions.`,
+      cost: 'about $3 in weekly gas fees',
       time: '10 minutes weekly',
     },
     {
-      text: `Maintain the open position continuously for at least ${hold} days to qualify across multiple protocol snapshot epochs.`,
-      cost: `$${capital} principal locked in position`,
-      time: `${hold} days retention`,
+      text: `Maintain active protocol interaction continuously for at least ${hold} days to satisfy snapshot epoch duration rules.`,
+      cost: `$${capital} principal locked in protocol`,
+      time: `${hold} days retention period`,
     },
     {
-      text: `Verify eligibility strictly through the official ${p.name} governance portal or audited links without interacting with phishing ads.`,
-      cost: 'zero fees for checking eligibility',
+      text: `Verify eligibility strictly through official ${p.name} channels and audited links without clicking external promotional ads.`,
+      cost: 'zero fees for checking',
       time: '10 minutes review',
     },
     {
@@ -334,6 +565,35 @@ export function farmSteps(p: SnapshotProtocol, age: number | null): FarmStep[] {
       time: '5 minutes logging',
     },
   ];
+}
+
+export function farmSteps(p: SnapshotProtocol, age: number | null): FarmStep[] {
+  const chain = chainOf(p);
+  const capital = capitalFor(p);
+  const hold = holdDaysFor(age);
+  const c = (p.category ?? '').toLowerCase();
+  
+  let rawSteps: FarmStep[];
+  if (c.includes('dex') || c.includes('yield') || c.includes('liquidity')) {
+    rawSteps = dexSteps(p, capital, chain, hold);
+  } else if (c.includes('lend') || c.includes('collateral')) {
+    rawSteps = lendingSteps(p, capital, chain, hold);
+  } else if (c.includes('bridge') || c.includes('cross chain')) {
+    rawSteps = bridgeSteps(p, capital, chain, hold);
+  } else if (c.includes('vault') || c.includes('allocator') || c.includes('curator')) {
+    rawSteps = yieldSteps(p, capital, chain, hold);
+  } else if (c.includes('perpetual') || c.includes('derivative') || c.includes('options')) {
+    rawSteps = derivativesSteps(p, capital, chain, hold);
+  } else if (c.includes('cdp') || c.includes('stable')) {
+    rawSteps = cdpSteps(p, capital, chain, hold);
+  } else if (c.includes('restak') || c.includes('staking')) {
+    rawSteps = restakingSteps(p, capital, chain, hold);
+  } else if (c.includes('rwa')) {
+    rawSteps = rwaSteps(p, capital, chain, hold);
+  } else {
+    rawSteps = generalSteps(p, capital, chain, hold);
+  }
+  return rawSteps;
 }
 
 export function liveRows(snapshot: Snapshot): LiveRow[] {
