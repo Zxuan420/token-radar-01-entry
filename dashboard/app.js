@@ -293,7 +293,7 @@
       el('div', { class: 'formula' },
         'implied = round( tvl_usd x ' + m.base_multiple + ' x (1 + clamp(change_7d, ' + m.growth_floor + ', ' + m.growth_cap + ') / 100 x ' + m.growth_weight + ') x (' + m.maturity_floor + ' + min(age_days, ' + m.maturity_days + ') / ' + m.maturity_days + ' x ' + m.maturity_range + ') x chainMult x catMult )'
       ),
-      el('p', { class: 'sub', text: 'The watchlist covers ' + DATA.watchlist_size + ' protocols meeting the floor ($' + Math.round(DATA.floor_usd / 1e6) + 'M TVL, no token), and the early radar adds ' + DATA.early_size + ' pre-token protocols below the floor (300 total rows). Live-token protocols are indexed separately.' })
+      el('p', { class: 'sub', text: 'The watchlist covers ' + DATA.watchlist_size + ' protocols meeting the floor ($' + Math.round(DATA.floor_usd / 1e6) + 'M TVL, no token), and the early radar adds ' + DATA.early_size + ' pre-token protocols below the floor (' + (DATA.watchlist_size + DATA.early_size) + ' total rows). Live-token protocols are indexed separately.' })
     );
   }
 
